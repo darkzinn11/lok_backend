@@ -10,8 +10,9 @@ seed
 # Ambiente e Segredos
 .env
 .env.production
-*.local
+.env.local
 .env.production.local
+node_modules/
 
 # Logs
 logs/
