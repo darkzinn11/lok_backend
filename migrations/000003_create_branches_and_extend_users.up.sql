@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS branches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    city VARCHAR(255) NOT NULL,
+    uf VARCHAR(2) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE';
+
+CREATE INDEX IF NOT EXISTS idx_users_branch_id ON users(branch_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_branches_status ON branches(status);

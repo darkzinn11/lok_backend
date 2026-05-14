@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_users_cpf_unique;
+
+ALTER TABLE users
+DROP COLUMN IF EXISTS birth_date,
+DROP COLUMN IF EXISTS cpf;

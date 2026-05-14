@@ -1,0 +1,30 @@
+# Binários
+api
+api.exe
+lokcenter-api
+seed
+*.exe
+*.test
+*.prof
+
+# Ambiente e Segredos
+.env
+.env.production
+*.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Ferramentas e Temporários
+bin/
+tmp/
+.air.toml
+dist/
+vendor/

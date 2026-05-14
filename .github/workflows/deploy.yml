@@ -1,0 +1,58 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Build
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o lokcenter-api ./cmd/api
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: "lokcenter-api,migrations"
+          target: "/srv/apps/lokcenter/backend/temp"
+
+      - name: Execute Remote Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            # Mover binário e migrações para o local correto
+            mv /srv/apps/lokcenter/backend/temp/lokcenter-api /srv/apps/lokcenter/backend/lokcenter-api
+            
+            # Atualizar migrações (remove a pasta antiga e coloca a nova)
+            rm -rf /srv/apps/lokcenter/backend/migrations
+            mv /srv/apps/lokcenter/backend/temp/migrations /srv/apps/lokcenter/backend/migrations
+            
+            # Limpar pasta temporária
+            rm -rf /srv/apps/lokcenter/backend/temp
+            
+            # Ajustar permissões
+            chmod +x /srv/apps/lokcenter/backend/lokcenter-api
+            
+            # Reiniciar o serviço systemd
+            sudo systemctl restart lokcenter-backend
+            
+            # Verificar status
+            systemctl status lokcenter-backend --no-pager

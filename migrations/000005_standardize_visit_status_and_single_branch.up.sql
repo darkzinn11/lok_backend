@@ -1,0 +1,17 @@
+UPDATE visits
+SET status = CASE status
+    WHEN 'IN_ANALYSIS' THEN 'Análise'
+    WHEN 'PENDING' THEN 'Pendente'
+    WHEN 'COMPLETED' THEN 'Enviado'
+    WHEN 'CANCELED' THEN 'Cancelado'
+    ELSE status
+END;
+
+UPDATE branches
+SET status = 'INACTIVE'
+WHERE id <> '11111111-1111-1111-1111-111111111111';
+
+UPDATE users
+SET branch_id = '11111111-1111-1111-1111-111111111111'
+WHERE branch_id IS NOT NULL
+  AND branch_id <> '11111111-1111-1111-1111-111111111111';

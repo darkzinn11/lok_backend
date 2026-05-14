@@ -1,0 +1,2 @@
+ALTER TABLE visits
+    ADD COLUMN IF NOT EXISTS receiver_name VARCHAR(255);
