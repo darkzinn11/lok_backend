@@ -191,6 +191,36 @@ func (h *SellerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	h.Success(w, map[string]string{"message": "seller deleted successfully"}, http.StatusOK)
 }
 
+func (h *SellerHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		h.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	sellerID, err := uuid.Parse(chi.URLParam(r, "sellerID"))
+	if err != nil {
+		h.Error(w, "invalid seller id", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Password string `json:"password" validate:"required"`
+	}
+
+	if err := h.Decode(r, &req); err != nil {
+		h.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if svcErr := h.sellerService.UpdatePassword(r.Context(), claims.UserID, sellerID, req.Password); svcErr != nil {
+		h.handleServiceError(w, svcErr)
+		return
+	}
+
+	h.Success(w, map[string]string{"message": "password updated successfully"}, http.StatusOK)
+}
+
 func (h *SellerHandler) handleServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, domain.ErrForbidden):

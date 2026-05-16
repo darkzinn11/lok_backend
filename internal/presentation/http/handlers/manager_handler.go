@@ -207,6 +207,36 @@ func (h *ManagerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	h.Success(w, map[string]string{"message": "manager deleted successfully"}, http.StatusOK)
 }
 
+func (h *ManagerHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		h.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	managerID, err := uuid.Parse(chi.URLParam(r, "managerID"))
+	if err != nil {
+		h.Error(w, "invalid manager id", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Password string `json:"password" validate:"required"`
+	}
+
+	if err := h.Decode(r, &req); err != nil {
+		h.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if svcErr := h.managerService.UpdatePassword(r.Context(), claims.UserID, managerID, req.Password); svcErr != nil {
+		h.handleManagerServiceError(w, svcErr)
+		return
+	}
+
+	h.Success(w, map[string]string{"message": "password updated successfully"}, http.StatusOK)
+}
+
 func (h *ManagerHandler) handleManagerServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, domain.ErrForbidden):

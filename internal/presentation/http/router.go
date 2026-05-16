@@ -63,6 +63,7 @@ func NewRouter(
 				r.Post("/managers", managerHandler.Create)
 				r.Get("/managers/{managerID}", managerHandler.GetByID)
 				r.Put("/managers/{managerID}", managerHandler.Update)
+				r.Patch("/managers/{managerID}/password", managerHandler.UpdatePassword)
 				r.Delete("/managers/{managerID}", managerHandler.Delete)
 			})
 
@@ -80,6 +81,7 @@ func NewRouter(
 				r.Post("/sellers", sellerHandler.Create)
 				r.Get("/sellers/{sellerID}", sellerHandler.GetByID)
 				r.Put("/sellers/{sellerID}", sellerHandler.Update)
+				r.Patch("/sellers/{sellerID}/password", sellerHandler.UpdatePassword)
 				r.Delete("/sellers/{sellerID}", sellerHandler.Delete)
 				r.Get("/dashboard/reports/sellers", dashboardHandler.SellerReport)
 			})

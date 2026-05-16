@@ -157,13 +157,12 @@ func (s *SellerService) Create(ctx context.Context, actorID uuid.UUID, input Cre
 	}
 
 	password := normalizedInput.Password
-	temporaryPassword := ""
 	if password == "" {
-		password, err = generateTemporaryPassword()
-		if err != nil {
-			return nil, err
-		}
-		temporaryPassword = password
+		return nil, fmt.Errorf("%w: password is required", domain.ErrValidation)
+	}
+
+	if err := ValidatePassword(password); err != nil {
+		return nil, err
 	}
 
 	passwordHash, err := s.hasher.Hash(password)
@@ -183,7 +182,7 @@ func (s *SellerService) Create(ctx context.Context, actorID uuid.UUID, input Cre
 		PasswordHash:       passwordHash,
 		Role:               domain.RoleSalesperson,
 		Status:             normalizedInput.Status,
-		MustChangePassword: true,
+		MustChangePassword: false,
 		BranchID:           &normalizedInput.BranchID,
 		CreatedAt:          now,
 		UpdatedAt:          now,
@@ -200,8 +199,39 @@ func (s *SellerService) Create(ctx context.Context, actorID uuid.UUID, input Cre
 
 	return &CreateSellerResult{
 		Seller:            output,
-		TemporaryPassword: temporaryPassword,
+		TemporaryPassword: "",
 	}, nil
+}
+
+func (s *SellerService) UpdatePassword(ctx context.Context, actorID, targetUserID uuid.UUID, newPassword string) error {
+	actor, err := s.loadActor(ctx, actorID)
+	if err != nil {
+		return err
+	}
+
+	if !actor.IsDirector() {
+		return domain.ErrForbidden
+	}
+
+	if err := ValidatePassword(newPassword); err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetByID(ctx, targetUserID)
+	if err != nil {
+		return fmt.Errorf("%w: user not found", domain.ErrNotFound)
+	}
+
+	hash, err := s.hasher.Hash(newPassword)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = hash
+	user.MustChangePassword = false
+	user.UpdatedAt = time.Now().UTC()
+
+	return s.userRepo.Update(ctx, user)
 }
 
 func (s *SellerService) Update(ctx context.Context, actorID, sellerID uuid.UUID, input UpdateSellerInput) (*SellerOutput, error) {
