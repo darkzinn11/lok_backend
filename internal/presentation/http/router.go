@@ -59,6 +59,7 @@ func NewRouter(
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RBACMiddleware(domain.RoleDirector))
 				r.Get("/managers", managerHandler.List)
+				r.Get("/managers/stats", managerHandler.Stats)
 				r.Post("/managers", managerHandler.Create)
 				r.Get("/managers/{managerID}", managerHandler.GetByID)
 				r.Put("/managers/{managerID}", managerHandler.Update)

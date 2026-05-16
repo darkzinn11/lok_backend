@@ -46,6 +46,22 @@ func (h *ManagerHandler) List(w http.ResponseWriter, r *http.Request) {
 	h.Success(w, managers, http.StatusOK)
 }
 
+func (h *ManagerHandler) Stats(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		h.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	stats, svcErr := h.managerService.GetStats(r.Context(), claims.UserID)
+	if svcErr != nil {
+		h.handleManagerServiceError(w, svcErr)
+		return
+	}
+
+	h.Success(w, stats, http.StatusOK)
+}
+
 func (h *ManagerHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetUserClaims(r.Context())
 	if !ok {

@@ -118,3 +118,24 @@ func (r *GormSellerRepository) ExistsByCPF(ctx context.Context, cpf string, excl
 
 	return count > 0, nil
 }
+
+func (r *GormSellerRepository) Count(ctx context.Context, filters domain.SellerFilters) (int, error) {
+	var count int64
+	query := r.db.WithContext(ctx).
+		Model(&domain.User{}).
+		Where("role = ?", domain.RoleSalesperson)
+
+	if filters.BranchID != nil {
+		query = query.Where("branch_id = ?", *filters.BranchID)
+	}
+
+	if filters.Status != nil {
+		query = query.Where("status = ?", *filters.Status)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}

@@ -21,4 +21,5 @@ type SellerRepository interface {
 	ExistsByEmail(ctx context.Context, email string, excludeID *uuid.UUID) (bool, error)
 	ExistsByPhone(ctx context.Context, phone string, excludeID *uuid.UUID) (bool, error)
 	ExistsByCPF(ctx context.Context, cpf string, excludeID *uuid.UUID) (bool, error)
+	Count(ctx context.Context, filters SellerFilters) (int, error)
 }

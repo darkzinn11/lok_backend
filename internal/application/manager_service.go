@@ -19,6 +19,13 @@ type ManagerService struct {
 	hasher      security.PasswordHasher
 }
 
+type ManagerStatsOutput struct {
+	Total    int `json:"total"`
+	Active   int `json:"active"`
+	Blocked  int `json:"blocked"`
+	Inactive int `json:"inactive"`
+}
+
 func NewManagerService(
 	managerRepo domain.SellerRepository,
 	userRepo domain.UserRepository,
@@ -58,6 +65,33 @@ func (s *ManagerService) List(ctx context.Context, actorID uuid.UUID, filters do
 	}
 
 	return s.mapManagers(ctx, managers, branchMap)
+}
+
+func (s *ManagerService) GetStats(ctx context.Context, actorID uuid.UUID) (*ManagerStatsOutput, error) {
+	actor, err := s.loadActor(ctx, actorID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !actor.IsDirector() {
+		return nil, domain.ErrForbidden
+	}
+
+	active := domain.UserStatusActive
+	activeCount, _ := s.managerRepo.Count(ctx, domain.SellerFilters{Status: &active})
+
+	inactive := domain.UserStatusInactive
+	inactiveCount, _ := s.managerRepo.Count(ctx, domain.SellerFilters{Status: &inactive})
+
+	blocked := domain.UserStatusBlocked
+	blockedCount, _ := s.managerRepo.Count(ctx, domain.SellerFilters{Status: &blocked})
+
+	return &ManagerStatsOutput{
+		Total:    activeCount + inactiveCount + blockedCount,
+		Active:   activeCount,
+		Inactive: inactiveCount,
+		Blocked:  blockedCount,
+	}, nil
 }
 
 func (s *ManagerService) GetByID(ctx context.Context, actorID, managerID uuid.UUID) (*SellerOutput, error) {
