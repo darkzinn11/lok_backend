@@ -102,7 +102,76 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		return nil, domain.ErrValidation
 	}
 
-	scopedVisits, err := s.listScopedVisits(ctx, actor)
+	// Filter setup for the period
+	baseFilters := domain.VisitFilters{
+		StartDate: &startDate,
+		EndDate:   &endDate,
+	}
+	if actor.IsSalesperson() {
+		baseFilters.SalespersonID = &actor.ID
+	} else if actor.IsManager() {
+		baseFilters.BranchID = actor.BranchID
+	}
+
+	// 1. Total Visits (non-draft)
+	totalVisits, err := s.visitRepo.Count(ctx, baseFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Pending Visits
+	pendingFilters := baseFilters
+	pendingStatus := domain.StatusPending
+	pendingFilters.Status = &pendingStatus
+	pendingVisits, err := s.visitRepo.Count(ctx, pendingFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Completed Visits
+	completedFilters := baseFilters
+	completedStatus := domain.StatusCompleted
+	completedFilters.Status = &completedStatus
+	completedVisits, err := s.visitRepo.Count(ctx, completedFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. Critical Alerts (History-wide, not just period)
+	alertFilters := domain.VisitFilters{OnlyAlerts: true}
+	if actor.IsSalesperson() {
+		alertFilters.SalespersonID = &actor.ID
+	} else if actor.IsManager() {
+		alertFilters.BranchID = actor.BranchID
+	}
+	criticalAlerts, err := s.visitRepo.Count(ctx, alertFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	// 5. Recent Visits (Limit to 5)
+	recentFilters := domain.VisitFilters{Limit: 5}
+	if actor.IsSalesperson() {
+		recentFilters.SalespersonID = &actor.ID
+	} else if actor.IsManager() {
+		recentFilters.BranchID = actor.BranchID
+	}
+	recentVisitsList, err := s.visitRepo.List(ctx, recentFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	visitService := NewVisitService(s.visitRepo, s.userRepo, s.branchRepo, s.clientRepo)
+	recentVisits, err := visitService.mapVisits(ctx, recentVisitsList)
+	if err != nil {
+		return nil, err
+	}
+
+	// For charts and seller performance, we still need some data aggregation.
+	// In a high-traffic system, we would use specialized GROUP BY queries.
+	// For now, we will fetch only the essential fields or keep the current in-memory 
+	// for the SMALL set of visits in the period, which is much better than ALL history.
+	periodVisits, err := s.visitRepo.List(ctx, baseFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -112,21 +181,15 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		return nil, err
 	}
 
-	periodVisits := filterVisitsByDate(scopedVisits, startDate, endDate)
-	recentVisits, err := s.mapRecentVisits(ctx, scopedVisits)
-	if err != nil {
-		return nil, err
-	}
-
 	return &DashboardOverviewOutput{
-		TotalVisits:           countNonDraftVisits(periodVisits),
-		PendingVisits:         countVisitsByStatus(periodVisits, domain.StatusPending),
-		CompletedVisits:       countVisitsByStatus(periodVisits, domain.StatusCompleted),
-		CriticalAlerts:        countCriticalAlerts(scopedVisits, time.Now().UTC()),
+		TotalVisits:           int(totalVisits),
+		PendingVisits:         int(pendingVisits),
+		CompletedVisits:       int(completedVisits),
+		CriticalAlerts:        int(criticalAlerts),
 		VisitTrend:            buildVisitTrend(periodVisits, startDate, endDate),
 		SubjectDistribution:   buildSubjectDistribution(periodVisits),
-		SellerPerformance:     buildSellerPerformance(scopedSellers, scopedVisits, startDate, endDate),
-		SellerPerformanceYear: buildSellerPerformanceYear(scopedSellers, scopedVisits, time.Now().UTC()),
+		SellerPerformance:     buildSellerPerformance(scopedSellers, periodVisits, startDate, endDate),
+		SellerPerformanceYear: buildSellerPerformanceYear(scopedSellers, periodVisits, time.Now().UTC()),
 		RecentVisits:          recentVisits,
 	}, nil
 }

@@ -12,9 +12,11 @@ import (
 
 	"lockcenter-backend/internal/application"
 	"lockcenter-backend/internal/config"
+	"lockcenter-backend/internal/domain"
 	"lockcenter-backend/internal/infrastructure/auth"
 	"lockcenter-backend/internal/infrastructure/persistence"
 	"lockcenter-backend/internal/infrastructure/security"
+	"lockcenter-backend/internal/infrastructure/storage"
 	rest "lockcenter-backend/internal/presentation/http"
 	"lockcenter-backend/internal/presentation/http/handlers"
 )
@@ -62,7 +64,22 @@ func main() {
 	tokenManager := auth.NewJWTTokenManager(cfg.JWTSecret, cfg.AccessTokenTTL, cfg.RefreshTokenTTL)
 	passwordHasher := security.NewBcryptHasher(12)
 
+	// 4.1 Storage Provider
+	var storageProvider domain.StorageProvider
+	if cfg.AWSAccessKey != "" && cfg.AWSSecretKey != "" {
+		minioProv, err := storage.NewMinioProvider(cfg.AWSEndpoint, cfg.AWSAccessKey, cfg.AWSSecretKey, cfg.AWSUseSSL)
+		if err != nil {
+			slog.Error("Failed to initialize Minio provider, falling back to local storage", slog.Any("error", err))
+			storageProvider = storage.NewLocalStorage(cfg.UploadDir)
+		} else {
+			storageProvider = minioProv
+		}
+	} else {
+		storageProvider = storage.NewLocalStorage(cfg.UploadDir)
+	}
+
 	// 5. Application Layer
+	imageService := application.NewImageService(storageProvider, cfg.AWSBucket)
 	authService := application.NewAuthService(userRepo, authRepo, tokenManager, passwordHasher)
 	branchService := application.NewBranchService(branchRepo)
 	sellerService := application.NewSellerService(sellerRepo, userRepo, branchRepo, passwordHasher)
@@ -80,9 +97,10 @@ func main() {
 	managerHandler := handlers.NewManagerHandler(managerService)
 	visitHandler := handlers.NewVisitHandler(visitService)
 	clientHandler := handlers.NewClientHandler(clientService)
+	uploadHandler := handlers.NewUploadHandler(imageService)
 
 	// 7. Router Setup
-	r := rest.NewRouter(cfg.CORSAllowedOrigins, tokenManager, authHandler, dashboardHandler, branchHandler, sellerHandler, managerHandler, visitHandler, clientHandler)
+	r := rest.NewRouter(cfg.CORSAllowedOrigins, tokenManager, authHandler, dashboardHandler, branchHandler, sellerHandler, managerHandler, visitHandler, clientHandler, uploadHandler)
 
 	// Global Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

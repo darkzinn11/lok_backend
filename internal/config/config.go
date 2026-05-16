@@ -56,7 +56,7 @@ func LoadConfig() (*Config, error) {
 		DatabaseURL:     getEnv("DATABASE_URL", ""),
 		JWTSecret:          strings.TrimSpace(os.Getenv("JWT_SECRET")),
 		CORSAllowedOrigins: getEnvAsSlice("CORS_ALLOWED_ORIGINS", []string{"http://localhost:5173"}),
-		AccessTokenTTL:     getEnvAsDuration("JWT_ACCESS_TTL", 15*time.Minute),
+		AccessTokenTTL:     getEnvAsDuration("JWT_ACCESS_TTL", 2*time.Hour),
 		RefreshTokenTTL: getEnvAsDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
 		AWSEndpoint:     getEnv("AWS_ENDPOINT", "http://localhost:9000"),
 		AWSAccessKey:    getEnv("AWS_ACCESS_KEY_ID", "admin_s3"),

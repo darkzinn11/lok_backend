@@ -88,10 +88,39 @@ func (r *GormVisitRepository) GetByID(ctx context.Context, id uuid.UUID) (*domai
 
 func (r *GormVisitRepository) List(ctx context.Context, filters domain.VisitFilters) ([]*domain.Visit, error) {
 	var visits []*domain.Visit
+	query := r.buildVisitQuery(ctx, filters)
 
-	query := r.db.WithContext(ctx).
-		Model(&domain.Visit{}).
-		Preload("Photos")
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit)
+	}
+	if filters.Offset > 0 {
+		query = query.Offset(filters.Offset)
+	}
+
+	// For general list, we might want photos, but for dashboard counts we use Count()
+	// To optimize, we only preload if specifically needed or if it's a small list
+	if filters.Limit <= 50 {
+		query = query.Preload("Photos")
+	}
+
+	if err := query.Order("visits.date DESC, visits.created_at DESC").Find(&visits).Error; err != nil {
+		return nil, err
+	}
+
+	return visits, nil
+}
+
+func (r *GormVisitRepository) Count(ctx context.Context, filters domain.VisitFilters) (int64, error) {
+	var count int64
+	query := r.buildVisitQuery(ctx, filters)
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *GormVisitRepository) buildVisitQuery(ctx context.Context, filters domain.VisitFilters) *gorm.DB {
+	query := r.db.WithContext(ctx).Model(&domain.Visit{})
 
 	if filters.SalespersonID != nil || filters.BranchID != nil || strings.TrimSpace(filters.Search) != "" {
 		query = query.Joins("JOIN users ON users.id = visits.salesperson_id")
@@ -111,6 +140,14 @@ func (r *GormVisitRepository) List(ctx context.Context, filters domain.VisitFilt
 
 	if filters.Date != nil {
 		query = query.Where("visits.date = ?", filters.Date.Format("2006-01-02"))
+	}
+
+	if filters.StartDate != nil {
+		query = query.Where("visits.date >= ?", filters.StartDate.Format("2006-01-02"))
+	}
+
+	if filters.EndDate != nil {
+		query = query.Where("visits.date <= ?", filters.EndDate.Format("2006-01-02"))
 	}
 
 	if subject := strings.TrimSpace(filters.Subject); subject != "" {
@@ -134,11 +171,7 @@ func (r *GormVisitRepository) List(ctx context.Context, filters domain.VisitFilt
 		query = query.Where("visits.date < ? AND visits.status <> ?", cutoff.Format("2006-01-02"), domain.StatusCompleted)
 	}
 
-	if err := query.Order("visits.date DESC, visits.created_at DESC").Find(&visits).Error; err != nil {
-		return nil, err
-	}
-
-	return visits, nil
+	return query
 }
 
 func (r *GormVisitRepository) Update(ctx context.Context, visit *domain.Visit) error {

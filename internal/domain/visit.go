@@ -77,13 +77,18 @@ type VisitFilters struct {
 	Subject       string
 	Conclusion    string
 	Date          *time.Time
+	StartDate     *time.Time
+	EndDate       *time.Time
 	OnlyAlerts    bool
+	Limit         int
+	Offset        int
 }
 
 type VisitRepository interface {
 	Create(ctx context.Context, visit *Visit) error
 	GetByID(ctx context.Context, id uuid.UUID) (*Visit, error)
 	List(ctx context.Context, filters VisitFilters) ([]*Visit, error)
+	Count(ctx context.Context, filters VisitFilters) (int64, error)
 	Update(ctx context.Context, visit *Visit) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status VisitStatus) error
 	AddPhoto(ctx context.Context, photo *VisitPhoto) error

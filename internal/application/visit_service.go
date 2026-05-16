@@ -159,7 +159,28 @@ func (s *VisitService) List(ctx context.Context, actorID uuid.UUID, filters doma
 	if err != nil {
 		return nil, err
 	}
-	return s.mapVisits(ctx, visits)
+	// Fetch all potential sellers and branches in bulk to avoid N+1 queries
+	sellerMap := make(map[uuid.UUID]*domain.User)
+	branchMap := make(map[uuid.UUID]*domain.Branch)
+
+	// In a real scenario, we might want to filter the sellers/branches 
+	// but for now, fetching all is faster than N queries if the team is small.
+	// For larger teams, we'd fetch only those present in the visits list.
+	sellers, err := s.userRepo.List(ctx) // Assuming List exists and returns all users
+	if err == nil {
+		for _, u := range sellers {
+			sellerMap[u.ID] = u
+		}
+	}
+
+	branches, err := s.branchRepo.List(ctx)
+	if err == nil {
+		for _, b := range branches {
+			branchMap[b.ID] = b
+		}
+	}
+
+	return s.mapVisits(ctx, visits, sellerMap, branchMap)
 }
 
 func (s *VisitService) GetByID(ctx context.Context, actorID, visitID uuid.UUID) (*VisitOutput, error) {
@@ -174,7 +195,7 @@ func (s *VisitService) GetByID(ctx context.Context, actorID, visitID uuid.UUID) 
 	if err := s.ensureVisitAccess(ctx, actor, visit); err != nil {
 		return nil, err
 	}
-	output, err := s.mapVisit(ctx, visit)
+	output, err := s.mapVisit(ctx, visit, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -604,10 +625,10 @@ func (s *VisitService) ensureVisitAccess(ctx context.Context, actor *domain.User
 	return domain.ErrForbidden
 }
 
-func (s *VisitService) mapVisits(ctx context.Context, visits []*domain.Visit) ([]VisitOutput, error) {
+func (s *VisitService) mapVisits(ctx context.Context, visits []*domain.Visit, sellerMap map[uuid.UUID]*domain.User, branchMap map[uuid.UUID]*domain.Branch) ([]VisitOutput, error) {
 	output := make([]VisitOutput, 0, len(visits))
 	for _, visit := range visits {
-		item, err := s.mapVisit(ctx, visit)
+		item, err := s.mapVisit(ctx, visit, sellerMap, branchMap)
 		if err != nil {
 			return nil, err
 		}
@@ -616,18 +637,40 @@ func (s *VisitService) mapVisits(ctx context.Context, visits []*domain.Visit) ([
 	return output, nil
 }
 
-func (s *VisitService) mapVisit(ctx context.Context, visit *domain.Visit) (VisitOutput, error) {
-	seller, err := s.userRepo.GetByID(ctx, visit.SalespersonID)
-	if err != nil {
-		return VisitOutput{}, err
+func (s *VisitService) mapVisit(ctx context.Context, visit *domain.Visit, sellerMap map[uuid.UUID]*domain.User, branchMap map[uuid.UUID]*domain.Branch) (VisitOutput, error) {
+	var seller *domain.User
+	var ok bool
+	if sellerMap != nil {
+		seller, ok = sellerMap[visit.SalespersonID]
 	}
+
+	if !ok {
+		var err error
+		seller, err = s.userRepo.GetByID(ctx, visit.SalespersonID)
+		if err != nil {
+			return VisitOutput{}, err
+		}
+	}
+
 	address := parseAddress(visit.Address)
 	branchID := ""
 	branchName := "Lokcenter - Unidade Principal"
 	if seller.BranchID != nil {
 		branchID = seller.BranchID.String()
-		branch, err := s.branchRepo.GetByID(ctx, *seller.BranchID)
-		if err == nil && branch != nil {
+		
+		var branch *domain.Branch
+		var bOk bool
+		if branchMap != nil {
+			branch, bOk = branchMap[*seller.BranchID]
+		}
+
+		if !bOk {
+			var err error
+			branch, err = s.branchRepo.GetByID(ctx, *seller.BranchID)
+			if err == nil && branch != nil {
+				branchName = branch.Name
+			}
+		} else if branch != nil {
 			branchName = branch.Name
 		}
 	}

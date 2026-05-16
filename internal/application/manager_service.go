@@ -48,7 +48,16 @@ func (s *ManagerService) List(ctx context.Context, actorID uuid.UUID, filters do
 		return nil, err
 	}
 
-	return s.mapManagers(ctx, managers)
+	// Fetch all branches in bulk to avoid N+1 queries
+	branchMap := make(map[uuid.UUID]string)
+	branches, err := s.branchRepo.List(ctx)
+	if err == nil {
+		for _, b := range branches {
+			branchMap[b.ID] = b.Name
+		}
+	}
+
+	return s.mapManagers(ctx, managers, branchMap)
 }
 
 func (s *ManagerService) GetByID(ctx context.Context, actorID, managerID uuid.UUID) (*SellerOutput, error) {
@@ -66,7 +75,7 @@ func (s *ManagerService) GetByID(ctx context.Context, actorID, managerID uuid.UU
 		return nil, fmt.Errorf("%w: manager not found", domain.ErrNotFound)
 	}
 
-	output, err := s.mapManager(ctx, manager)
+	output, err := s.mapManager(ctx, manager, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +140,7 @@ func (s *ManagerService) Create(ctx context.Context, actorID uuid.UUID, input Cr
 		return nil, err
 	}
 
-	output, err := s.mapManager(ctx, manager)
+	output, err := s.mapManager(ctx, manager, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +207,7 @@ func (s *ManagerService) Update(ctx context.Context, actorID, managerID uuid.UUI
 		return nil, err
 	}
 
-	output, err := s.mapManager(ctx, manager)
+	output, err := s.mapManager(ctx, manager, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -335,10 +344,10 @@ func (s *ManagerService) ensureUnique(ctx context.Context, email, phone, cpf str
 	return nil
 }
 
-func (s *ManagerService) mapManagers(ctx context.Context, managers []*domain.User) ([]SellerOutput, error) {
+func (s *ManagerService) mapManagers(ctx context.Context, managers []*domain.User, branchMap map[uuid.UUID]string) ([]SellerOutput, error) {
 	output := make([]SellerOutput, 0, len(managers))
 	for _, manager := range managers {
-		item, err := s.mapManager(ctx, manager)
+		item, err := s.mapManager(ctx, manager, branchMap)
 		if err != nil {
 			return nil, err
 		}
@@ -347,7 +356,7 @@ func (s *ManagerService) mapManagers(ctx context.Context, managers []*domain.Use
 	return output, nil
 }
 
-func (s *ManagerService) mapManager(ctx context.Context, manager *domain.User) (SellerOutput, error) {
+func (s *ManagerService) mapManager(ctx context.Context, manager *domain.User, branchMap map[uuid.UUID]string) (SellerOutput, error) {
 	item := SellerOutput{
 		ID:        manager.ID,
 		Name:      manager.Name,
@@ -363,9 +372,14 @@ func (s *ManagerService) mapManager(ctx context.Context, manager *domain.User) (
 	}
 
 	if manager.BranchID != nil {
-		branch, err := s.branchRepo.GetByID(ctx, *manager.BranchID)
-		if err == nil && branch != nil {
-			item.BranchName = branch.Name
+		if name, ok := branchMap[*manager.BranchID]; ok {
+			item.BranchName = name
+		} else {
+			// Fallback for single object mapping if map is not provided
+			branch, err := s.branchRepo.GetByID(ctx, *manager.BranchID)
+			if err == nil && branch != nil {
+				item.BranchName = branch.Name
+			}
 		}
 	}
 

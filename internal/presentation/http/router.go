@@ -20,6 +20,7 @@ func NewRouter(
 	managerHandler *handlers.ManagerHandler,
 	visitHandler *handlers.VisitHandler,
 	clientHandler *handlers.ClientHandler,
+	uploadHandler *handlers.UploadHandler,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -81,6 +82,8 @@ func NewRouter(
 				r.Delete("/sellers/{sellerID}", sellerHandler.Delete)
 				r.Get("/dashboard/reports/sellers", dashboardHandler.SellerReport)
 			})
+
+			r.Post("/upload/image", uploadHandler.UploadImage)
 
 			r.Route("/visits", func(r chi.Router) {
 				r.Get("/", visitHandler.List)
