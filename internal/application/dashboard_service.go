@@ -162,7 +162,22 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 	}
 
 	visitService := NewVisitService(s.visitRepo, s.userRepo, s.branchRepo, s.clientRepo)
-	recentVisits, err := visitService.mapVisits(ctx, recentVisitsList)
+
+	// Fetch all potential sellers and branches in bulk to avoid N+1 queries
+	sellerMap := make(map[uuid.UUID]*domain.User)
+	branchMap := make(map[uuid.UUID]*domain.Branch)
+
+	sellersBulk, _ := s.userRepo.List(ctx)
+	for _, u := range sellersBulk {
+		sellerMap[u.ID] = u
+	}
+
+	branchesBulk, _ := s.branchRepo.List(ctx)
+	for _, b := range branchesBulk {
+		branchMap[b.ID] = b
+	}
+
+	recentVisits, err := visitService.mapVisits(ctx, recentVisitsList, sellerMap, branchMap)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +376,22 @@ func (s *DashboardService) mapRecentVisits(ctx context.Context, visits []*domain
 	}
 
 	visitService := NewVisitService(s.visitRepo, s.userRepo, s.branchRepo, s.clientRepo)
-	return visitService.mapVisits(ctx, cloned)
+
+	// Fetch all potential sellers and branches in bulk to avoid N+1 queries
+	sellerMap := make(map[uuid.UUID]*domain.User)
+	branchMap := make(map[uuid.UUID]*domain.Branch)
+
+	sellersBulk, _ := s.userRepo.List(ctx)
+	for _, u := range sellersBulk {
+		sellerMap[u.ID] = u
+	}
+
+	branchesBulk, _ := s.branchRepo.List(ctx)
+	for _, b := range branchesBulk {
+		branchMap[b.ID] = b
+	}
+
+	return visitService.mapVisits(ctx, cloned, sellerMap, branchMap)
 }
 
 func normalizeDateBoundary(value time.Time) time.Time {
