@@ -234,6 +234,10 @@ func (r *stubSellerRepository) ExistsByCPF(_ context.Context, _ string, _ *uuid.
 	return r.existsByCPF, nil
 }
 
+func (r *stubSellerRepository) Count(_ context.Context, _ domain.SellerFilters) (int, error) {
+	return 0, nil
+}
+
 type stubUserRepository struct {
 	usersByID map[uuid.UUID]*domain.User
 }

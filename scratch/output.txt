@@ -1,0 +1,160 @@
+2026/05/17 22:04:25 INFO Connected to database successfully
+
+2026/05/17 22:04:26 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[500.554ms] [33m[rows:1][35m SELECT count(*) FROM information_schema.tables WHERE table_schema = CURRENT_SCHEMA() AND table_name = 'schema_migrations' AND table_type = 'BASE TABLE'[0m
+
+2026/05/17 22:04:26 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[350.168ms] [33m[rows:1][35m SELECT CURRENT_DATABASE()[0m
+
+2026/05/17 22:04:26 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[314.993ms] [33m[rows:-][35m SELECT c.column_name, c.is_nullable = 'YES', c.udt_name, c.character_maximum_length, c.numeric_precision, c.numeric_precision_radix, c.numeric_scale, c.datetime_precision, 8 * typlen, c.column_default, pd.description, c.identity_increment FROM information_schema.columns AS c JOIN pg_type AS pgt ON c.udt_name = pgt.typname LEFT JOIN pg_catalog.pg_description as pd ON pd.objsubid = c.ordinal_position AND pd.objoid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = c.table_name AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = c.table_schema)) where table_catalog = 'lokcenter_db' AND table_schema = CURRENT_SCHEMA() AND table_name = 'schema_migrations'[0m
+
+2026/05/17 22:04:27 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[311.679ms] [33m[rows:-][35m SELECT constraint_name FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_catalog, table_name, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name WHERE constraint_type IN ('PRIMARY KEY', 'UNIQUE') AND c.table_catalog = 'lokcenter_db' AND c.table_schema = CURRENT_SCHEMA() AND c.table_name = 'schema_migrations' AND constraint_type = 'UNIQUE'[0m
+
+2026/05/17 22:04:27 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[312.588ms] [33m[rows:-][35m SELECT c.column_name, constraint_name, constraint_type FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_catalog, table_name, constraint_name) JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name WHERE constraint_type IN ('PRIMARY KEY', 'UNIQUE') AND c.table_catalog = 'lokcenter_db' AND c.table_schema = CURRENT_SCHEMA() AND c.table_name = 'schema_migrations'[0m
+
+2026/05/17 22:04:27 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[306.899ms] [33m[rows:-][35m SELECT a.attname as column_name, format_type(a.atttypid, a.atttypmod) AS data_type
+		FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.oid AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = CURRENT_SCHEMA())
+		WHERE a.attnum > 0 -- hide internal columns
+		AND NOT a.attisdropped -- hide deleted columns
+		AND b.relname = 'schema_migrations'[0m
+
+2026/05/17 22:04:28 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:19 [33mSLOW SQL >= 200ms
+[0m[31;1m[308.745ms] [33m[rows:0][35m SELECT description FROM pg_catalog.pg_description WHERE objsubid = (SELECT ordinal_position FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA() AND table_name = 'schema_migrations' AND column_name = 'version') AND objoid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = 'schema_migrations' AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = CURRENT_SCHEMA()))[0m
+
+2026/05/17 22:04:28 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/migrations.go:40 [33mSLOW SQL >= 200ms
+[0m[31;1m[329.738ms] [33m[rows:1][35m SELECT count(*) FROM "schema_migrations" WHERE version = '000001_init_schema.up.sql'[0m
+
+2026/05/17 22:04:31 [32m/Users/josehenrique/Lockcenter/backend/scratch/test_overview.go:47 [33mSLOW SQL >= 200ms
+[0m[31;1m[347.670ms] [33m[rows:1][35m SELECT * FROM "users" WHERE role = 'DIRECTOR' ORDER BY "users"."id" LIMIT 1[0m
+Director User: ID=1aa79ca7-217b-4ed9-ba61-59a8b061f9cb, Name=Diretor Lokcenter
+
+--- SCENARIO 1: ALL BRANCHES (BranchID = nil) ---
+
+2026/05/17 22:04:31 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:38 [33mSLOW SQL >= 200ms
+[0m[31;1m[343.721ms] [33m[rows:1][35m SELECT * FROM "users" WHERE id = '1aa79ca7-217b-4ed9-ba61-59a8b061f9cb' ORDER BY "users"."id" LIMIT 1[0m
+
+2026/05/17 22:04:31 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[309.335ms] [33m[rows:1][35m SELECT count(*) FROM "visits" WHERE visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'[0m
+
+2026/05/17 22:04:32 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[324.233ms] [33m[rows:1][35m SELECT count(*) FROM "visits" WHERE visits.status = 'Pendente' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'[0m
+
+2026/05/17 22:04:32 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116
+[0m[33m[176.464ms] [34;1m[rows:1][0m SELECT count(*) FROM "visits" WHERE visits.status = 'Enviado' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'
+
+2026/05/17 22:04:32 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[328.487ms] [33m[rows:1][35m SELECT count(*) FROM "visits" WHERE visits.date < '2026-04-17' AND visits.status <> 'Enviado'[0m
+
+2026/05/17 22:04:33 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[354.211ms] [33m[rows:1][35m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" IN ('6c60d907-58f8-49fc-ae41-bb6e716cf1f7','3f661620-161d-4012-bcb6-4adc7d16ec4b')[0m
+
+2026/05/17 22:04:33 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[716.952ms] [33m[rows:2][35m SELECT * FROM "visits" ORDER BY visits.date DESC, visits.created_at DESC LIMIT 5[0m
+
+2026/05/17 22:04:35 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:54 [33mSLOW SQL >= 200ms
+[0m[31;1m[2228.233ms] [33m[rows:7][35m SELECT * FROM "users"[0m
+
+2026/05/17 22:04:36 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/branch_repository.go:22 [33mSLOW SQL >= 200ms
+[0m[31;1m[865.333ms] [33m[rows:5][35m SELECT * FROM "branches" ORDER BY name ASC[0m
+
+2026/05/17 22:04:37 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[288.167ms] [33m[rows:1][35m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" IN ('6c60d907-58f8-49fc-ae41-bb6e716cf1f7','3f661620-161d-4012-bcb6-4adc7d16ec4b')[0m
+
+2026/05/17 22:04:37 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[857.968ms] [33m[rows:2][35m SELECT * FROM "visits" WHERE visits.date >= '2026-01-01' AND visits.date <= '2026-12-31' ORDER BY visits.date DESC, visits.created_at DESC[0m
+
+2026/05/17 22:04:37 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/seller_repository.go:41 [33mSLOW SQL >= 200ms
+[0m[31;1m[544.697ms] [33m[rows:3][35m SELECT * FROM "users" WHERE role = 'SALESPERSON' ORDER BY name ASC[0m
+ALL BRANCHES counts -> Total: 2, Pending: 1, Completed: 1
+
+2026/05/17 22:04:38 [32m/Users/josehenrique/Lockcenter/backend/scratch/test_overview.go:72 [33mSLOW SQL >= 200ms
+[0m[31;1m[481.405ms] [33m[rows:1][35m SELECT * FROM "branches" WHERE name LIKE '%Belém%' ORDER BY "branches"."id" LIMIT 1[0m
+
+Belém Branch: ID=22222222-2222-2222-2222-222222222222, Name=Belém/PA
+
+--- SCENARIO 2: BELÉM BRANCH ---
+
+2026/05/17 22:04:38 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:38 [33mSLOW SQL >= 200ms
+[0m[31;1m[311.001ms] [33m[rows:1][35m SELECT * FROM "users" WHERE id = '1aa79ca7-217b-4ed9-ba61-59a8b061f9cb' ORDER BY "users"."id" LIMIT 1[0m
+
+2026/05/17 22:04:39 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[622.213ms] [33m[rows:1][35m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'[0m
+
+2026/05/17 22:04:39 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[544.336ms] [33m[rows:1][35m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' AND visits.status = 'Pendente' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'[0m
+
+2026/05/17 22:04:40 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[316.273ms] [33m[rows:1][35m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' AND visits.status = 'Enviado' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'[0m
+
+2026/05/17 22:04:40 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116 [33mSLOW SQL >= 200ms
+[0m[31;1m[327.336ms] [33m[rows:1][35m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' AND (visits.date < '2026-04-17' AND visits.status <> 'Enviado')[0m
+
+2026/05/17 22:04:41 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[322.386ms] [33m[rows:0][35m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" = '6c60d907-58f8-49fc-ae41-bb6e716cf1f7'[0m
+
+2026/05/17 22:04:41 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[627.142ms] [33m[rows:1][35m SELECT "visits"."id","visits"."salesperson_id","visits"."status","visits"."date","visits"."client_name","visits"."client_cnpj","visits"."client_email","visits"."contact_phone","visits"."branch_phone","visits"."address","visits"."subject","visits"."conclusion","visits"."arrival_time","visits"."departure_time","visits"."km_start","visits"."km_end","visits"."geo_latitude","visits"."geo_longitude","visits"."geo_accuracy_meters","visits"."geo_captured_at","visits"."geo_reverse_address","visits"."receiver_name","visits"."observations","visits"."manager_observation","visits"."created_at","visits"."updated_at" FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' ORDER BY visits.date DESC, visits.created_at DESC LIMIT 5[0m
+
+2026/05/17 22:04:42 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:54 [33mSLOW SQL >= 200ms
+[0m[31;1m[1270.609ms] [33m[rows:7][35m SELECT * FROM "users"[0m
+
+2026/05/17 22:04:42 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/branch_repository.go:22 [33mSLOW SQL >= 200ms
+[0m[31;1m[341.247ms] [33m[rows:5][35m SELECT * FROM "branches" ORDER BY name ASC[0m
+
+2026/05/17 22:04:43 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106
+[0m[33m[170.601ms] [34;1m[rows:0][0m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" = '6c60d907-58f8-49fc-ae41-bb6e716cf1f7'
+
+2026/05/17 22:04:43 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[475.270ms] [33m[rows:1][35m SELECT "visits"."id","visits"."salesperson_id","visits"."status","visits"."date","visits"."client_name","visits"."client_cnpj","visits"."client_email","visits"."contact_phone","visits"."branch_phone","visits"."address","visits"."subject","visits"."conclusion","visits"."arrival_time","visits"."departure_time","visits"."km_start","visits"."km_end","visits"."geo_latitude","visits"."geo_longitude","visits"."geo_accuracy_meters","visits"."geo_captured_at","visits"."geo_reverse_address","visits"."receiver_name","visits"."observations","visits"."manager_observation","visits"."created_at","visits"."updated_at" FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '22222222-2222-2222-2222-222222222222' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31' ORDER BY visits.date DESC, visits.created_at DESC[0m
+
+2026/05/17 22:04:43 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/seller_repository.go:41 [33mSLOW SQL >= 200ms
+[0m[31;1m[304.450ms] [33m[rows:1][35m SELECT * FROM "users" WHERE role = 'SALESPERSON' AND branch_id = '22222222-2222-2222-2222-222222222222' ORDER BY name ASC[0m
+BELÉM counts -> Total: 1, Pending: 0, Completed: 1
+
+2026/05/17 22:04:43 [32m/Users/josehenrique/Lockcenter/backend/scratch/test_overview.go:92
+[0m[33m[174.883ms] [34;1m[rows:1][0m SELECT * FROM "branches" WHERE name LIKE '%São Luís%' ORDER BY "branches"."id" LIMIT 1
+
+São Luís Branch: ID=11111111-1111-1111-1111-111111111111, Name=Sede São Luís
+
+--- SCENARIO 3: SÃO LUÍS SE DE BRANCH ---
+
+2026/05/17 22:04:43 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:38
+[0m[33m[156.392ms] [34;1m[rows:1][0m SELECT * FROM "users" WHERE id = '1aa79ca7-217b-4ed9-ba61-59a8b061f9cb' ORDER BY "users"."id" LIMIT 1
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116
+[0m[33m[171.455ms] [34;1m[rows:1][0m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116
+[0m[33m[151.738ms] [34;1m[rows:1][0m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' AND visits.status = 'Pendente' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116
+[0m[33m[151.544ms] [34;1m[rows:1][0m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' AND visits.status = 'Enviado' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31'
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:116
+[0m[33m[155.439ms] [34;1m[rows:1][0m SELECT count(*) FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' AND (visits.date < '2026-04-17' AND visits.status <> 'Enviado')
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106
+[0m[33m[154.559ms] [34;1m[rows:1][0m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" = '3f661620-161d-4012-bcb6-4adc7d16ec4b'
+
+2026/05/17 22:04:44 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[326.590ms] [33m[rows:1][35m SELECT "visits"."id","visits"."salesperson_id","visits"."status","visits"."date","visits"."client_name","visits"."client_cnpj","visits"."client_email","visits"."contact_phone","visits"."branch_phone","visits"."address","visits"."subject","visits"."conclusion","visits"."arrival_time","visits"."departure_time","visits"."km_start","visits"."km_end","visits"."geo_latitude","visits"."geo_longitude","visits"."geo_accuracy_meters","visits"."geo_captured_at","visits"."geo_reverse_address","visits"."receiver_name","visits"."observations","visits"."manager_observation","visits"."created_at","visits"."updated_at" FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' ORDER BY visits.date DESC, visits.created_at DESC LIMIT 5[0m
+
+2026/05/17 22:04:46 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:54 [33mSLOW SQL >= 200ms
+[0m[31;1m[1429.484ms] [33m[rows:7][35m SELECT * FROM "users"[0m
+
+2026/05/17 22:04:46 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/branch_repository.go:22 [33mSLOW SQL >= 200ms
+[0m[31;1m[315.071ms] [33m[rows:5][35m SELECT * FROM "branches" ORDER BY name ASC[0m
+
+2026/05/17 22:04:46 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106
+[0m[33m[172.046ms] [34;1m[rows:1][0m SELECT * FROM "visit_photos" WHERE "visit_photos"."visit_id" = '3f661620-161d-4012-bcb6-4adc7d16ec4b'
+
+2026/05/17 22:04:46 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/repository.go:106 [33mSLOW SQL >= 200ms
+[0m[31;1m[347.938ms] [33m[rows:1][35m SELECT "visits"."id","visits"."salesperson_id","visits"."status","visits"."date","visits"."client_name","visits"."client_cnpj","visits"."client_email","visits"."contact_phone","visits"."branch_phone","visits"."address","visits"."subject","visits"."conclusion","visits"."arrival_time","visits"."departure_time","visits"."km_start","visits"."km_end","visits"."geo_latitude","visits"."geo_longitude","visits"."geo_accuracy_meters","visits"."geo_captured_at","visits"."geo_reverse_address","visits"."receiver_name","visits"."observations","visits"."manager_observation","visits"."created_at","visits"."updated_at" FROM "visits" JOIN users ON users.id = visits.salesperson_id WHERE users.branch_id = '11111111-1111-1111-1111-111111111111' AND visits.date >= '2026-01-01' AND visits.date <= '2026-12-31' ORDER BY visits.date DESC, visits.created_at DESC[0m
+
+2026/05/17 22:04:47 [32m/Users/josehenrique/Lockcenter/backend/internal/infrastructure/persistence/seller_repository.go:41
+[0m[33m[180.846ms] [34;1m[rows:2][0m SELECT * FROM "users" WHERE role = 'SALESPERSON' AND branch_id = '11111111-1111-1111-1111-111111111111' ORDER BY name ASC
+SÃO LUÍS counts -> Total: 1, Pending: 1, Completed: 0

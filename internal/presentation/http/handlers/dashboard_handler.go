@@ -8,6 +8,8 @@ import (
 	"lockcenter-backend/internal/application"
 	"lockcenter-backend/internal/domain"
 	"lockcenter-backend/internal/presentation/http/middleware"
+
+	"github.com/google/uuid"
 )
 
 type DashboardHandler struct {
@@ -29,7 +31,7 @@ func (h *DashboardHandler) Overview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startDate, endDate, err := parseDashboardRange(r)
+	startDate, endDate, branchID, err := parseDashboardRange(r)
 	if err != nil {
 		h.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -38,6 +40,7 @@ func (h *DashboardHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	output, svcErr := h.dashboardService.GetOverview(r.Context(), claims.UserID, application.DashboardRange{
 		StartDate: startDate,
 		EndDate:   endDate,
+		BranchID:  branchID,
 	})
 	if svcErr != nil {
 		switch {
@@ -63,7 +66,7 @@ func (h *DashboardHandler) SellerReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	startDate, endDate, err := parseDashboardRange(r)
+	startDate, endDate, branchID, err := parseDashboardRange(r)
 	if err != nil {
 		h.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,6 +75,7 @@ func (h *DashboardHandler) SellerReport(w http.ResponseWriter, r *http.Request) 
 	output, svcErr := h.dashboardService.GetSellerReport(r.Context(), claims.UserID, application.DashboardRange{
 		StartDate: startDate,
 		EndDate:   endDate,
+		BranchID:  branchID,
 	})
 	if svcErr != nil {
 		switch {
@@ -90,7 +94,7 @@ func (h *DashboardHandler) SellerReport(w http.ResponseWriter, r *http.Request) 
 	h.Success(w, output, http.StatusOK)
 }
 
-func parseDashboardRange(r *http.Request) (time.Time, time.Time, error) {
+func parseDashboardRange(r *http.Request) (time.Time, time.Time, *uuid.UUID, error) {
 	now := time.Now().UTC()
 	startDate := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	endDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
@@ -98,7 +102,7 @@ func parseDashboardRange(r *http.Request) (time.Time, time.Time, error) {
 	if value := r.URL.Query().Get("start_date"); value != "" {
 		parsed, err := time.Parse("2006-01-02", value)
 		if err != nil {
-			return time.Time{}, time.Time{}, errors.New("invalid start_date")
+			return time.Time{}, time.Time{}, nil, errors.New("invalid start_date")
 		}
 		startDate = parsed.UTC()
 	}
@@ -106,10 +110,19 @@ func parseDashboardRange(r *http.Request) (time.Time, time.Time, error) {
 	if value := r.URL.Query().Get("end_date"); value != "" {
 		parsed, err := time.Parse("2006-01-02", value)
 		if err != nil {
-			return time.Time{}, time.Time{}, errors.New("invalid end_date")
+			return time.Time{}, time.Time{}, nil, errors.New("invalid end_date")
 		}
 		endDate = parsed.UTC()
 	}
 
-	return startDate, endDate, nil
+	var branchID *uuid.UUID
+	if value := r.URL.Query().Get("branch_id"); value != "" {
+		parsed, err := uuid.Parse(value)
+		if err != nil {
+			return time.Time{}, time.Time{}, nil, errors.New("invalid branch_id")
+		}
+		branchID = &parsed
+	}
+
+	return startDate, endDate, branchID, nil
 }

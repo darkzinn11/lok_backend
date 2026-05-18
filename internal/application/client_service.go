@@ -42,6 +42,8 @@ type CreateClientInput struct {
 	ContactPhone  string        `json:"contactPhone"`
 	FixedPhone    string        `json:"fixedPhone"`
 	Address       ClientAddress `json:"address"`
+	BranchID      *uuid.UUID    `json:"branchId,omitempty"`
+	SellerID      *uuid.UUID    `json:"sellerId,omitempty"`
 }
 
 type UpdateClientInput struct {
@@ -76,9 +78,52 @@ func (s *ClientService) Create(ctx context.Context, actorID uuid.UUID, input Cre
 		return nil, domain.ErrForbidden
 	}
 
-	branchID, err := s.resolveClientBranch(ctx, actor)
-	if err != nil {
-		return nil, err
+	var branchID uuid.UUID
+	var sellerID uuid.UUID
+
+	if actor.IsDirector() {
+		if input.BranchID == nil || *input.BranchID == uuid.Nil {
+			return nil, fmt.Errorf("%w: branchId is required for directors", domain.ErrValidation)
+		}
+		if input.SellerID == nil || *input.SellerID == uuid.Nil {
+			return nil, fmt.Errorf("%w: sellerId is required for directors", domain.ErrValidation)
+		}
+		branchID = *input.BranchID
+		sellerID = *input.SellerID
+
+		selectedSeller, err := s.userRepo.GetByID(ctx, sellerID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: selected seller not found", domain.ErrValidation)
+		}
+		if selectedSeller.BranchID == nil || *selectedSeller.BranchID != branchID {
+			return nil, fmt.Errorf("%w: selected seller does not belong to the selected branch", domain.ErrValidation)
+		}
+	} else if actor.IsManager() {
+		if actor.BranchID == nil {
+			return nil, fmt.Errorf("%w: manager branch not set", domain.ErrForbidden)
+		}
+		branchID = *actor.BranchID
+
+		if input.SellerID == nil || *input.SellerID == uuid.Nil {
+			return nil, fmt.Errorf("%w: sellerId is required for managers", domain.ErrValidation)
+		}
+		sellerID = *input.SellerID
+
+		selectedSeller, err := s.userRepo.GetByID(ctx, sellerID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: selected seller not found", domain.ErrValidation)
+		}
+		if selectedSeller.BranchID == nil || *selectedSeller.BranchID != branchID {
+			return nil, fmt.Errorf("%w: selected seller does not belong to your branch", domain.ErrForbidden)
+		}
+	} else if actor.IsSalesperson() {
+		if actor.BranchID == nil {
+			return nil, fmt.Errorf("%w: seller branch not set", domain.ErrForbidden)
+		}
+		branchID = *actor.BranchID
+		sellerID = actor.ID
+	} else {
+		return nil, domain.ErrForbidden
 	}
 
 	cnpj := normalizeDigits(input.CNPJ)
@@ -99,7 +144,7 @@ func (s *ClientService) Create(ctx context.Context, actorID uuid.UUID, input Cre
 	client := &domain.Client{
 		ID:            uuid.New(),
 		BranchID:      branchID,
-		SellerID:      actor.ID,
+		SellerID:      sellerID,
 		Name:          strings.TrimSpace(input.Name),
 		CNPJ:          cnpj,
 		Email:         strings.TrimSpace(input.Email),

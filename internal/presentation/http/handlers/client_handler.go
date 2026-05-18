@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"lockcenter-backend/internal/application"
@@ -181,16 +182,21 @@ func (h *ClientHandler) Reassign(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ClientHandler) HandleError(w http.ResponseWriter, err error) {
-	switch err {
-	case domain.ErrUnauthorized:
+	if errors.Is(err, domain.ErrUnauthorized) {
 		h.Error(w, err.Error(), http.StatusUnauthorized)
-	case domain.ErrForbidden:
-		h.Error(w, err.Error(), http.StatusForbidden)
-	case domain.ErrNotFound:
-		h.Error(w, err.Error(), http.StatusNotFound)
-	case domain.ErrValidation:
-		h.Error(w, err.Error(), http.StatusBadRequest)
-	default:
-		h.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
+	if errors.Is(err, domain.ErrForbidden) {
+		h.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	if errors.Is(err, domain.ErrNotFound) {
+		h.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if errors.Is(err, domain.ErrValidation) {
+		h.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	h.Error(w, "Internal Server Error", http.StatusInternalServerError)
 }

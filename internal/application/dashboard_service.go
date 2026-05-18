@@ -60,6 +60,7 @@ type SellerReportOutput struct {
 type DashboardRange struct {
 	StartDate time.Time
 	EndDate   time.Time
+	BranchID  *uuid.UUID
 }
 
 type DashboardService struct {
@@ -111,6 +112,8 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		baseFilters.SalespersonID = &actor.ID
 	} else if actor.IsManager() {
 		baseFilters.BranchID = actor.BranchID
+	} else if actor.IsDirector() && input.BranchID != nil {
+		baseFilters.BranchID = input.BranchID
 	}
 
 	// 1. Total Visits (non-draft)
@@ -143,6 +146,8 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		alertFilters.SalespersonID = &actor.ID
 	} else if actor.IsManager() {
 		alertFilters.BranchID = actor.BranchID
+	} else if actor.IsDirector() && input.BranchID != nil {
+		alertFilters.BranchID = input.BranchID
 	}
 	criticalAlerts, err := s.visitRepo.Count(ctx, alertFilters)
 	if err != nil {
@@ -155,6 +160,8 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		recentFilters.SalespersonID = &actor.ID
 	} else if actor.IsManager() {
 		recentFilters.BranchID = actor.BranchID
+	} else if actor.IsDirector() && input.BranchID != nil {
+		recentFilters.BranchID = input.BranchID
 	}
 	recentVisitsList, err := s.visitRepo.List(ctx, recentFilters)
 	if err != nil {
@@ -191,7 +198,7 @@ func (s *DashboardService) GetOverview(ctx context.Context, actorID uuid.UUID, i
 		return nil, err
 	}
 
-	scopedSellers, err := s.listScopedSellers(ctx, actor)
+	scopedSellers, err := s.listScopedSellers(ctx, actor, input.BranchID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,12 +232,12 @@ func (s *DashboardService) GetSellerReport(ctx context.Context, actorID uuid.UUI
 		return nil, domain.ErrValidation
 	}
 
-	scopedVisits, err := s.listScopedVisits(ctx, actor)
+	scopedVisits, err := s.listScopedVisits(ctx, actor, input.BranchID)
 	if err != nil {
 		return nil, err
 	}
 
-	scopedSellers, err := s.listScopedSellers(ctx, actor)
+	scopedSellers, err := s.listScopedSellers(ctx, actor, input.BranchID)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +334,7 @@ func (s *DashboardService) GetSellerReport(ctx context.Context, actorID uuid.UUI
 	return &SellerReportOutput{Items: items}, nil
 }
 
-func (s *DashboardService) listScopedVisits(ctx context.Context, actor *domain.User) ([]*domain.Visit, error) {
+func (s *DashboardService) listScopedVisits(ctx context.Context, actor *domain.User, branchID *uuid.UUID) ([]*domain.Visit, error) {
 	filters := domain.VisitFilters{}
 	if actor.IsSalesperson() {
 		filters.SalespersonID = &actor.ID
@@ -336,12 +343,14 @@ func (s *DashboardService) listScopedVisits(ctx context.Context, actor *domain.U
 			return nil, domain.ErrForbidden
 		}
 		filters.BranchID = actor.BranchID
+	} else if actor.IsDirector() && branchID != nil {
+		filters.BranchID = branchID
 	}
 
 	return s.visitRepo.List(ctx, filters)
 }
 
-func (s *DashboardService) listScopedSellers(ctx context.Context, actor *domain.User) ([]*domain.User, error) {
+func (s *DashboardService) listScopedSellers(ctx context.Context, actor *domain.User, branchID *uuid.UUID) ([]*domain.User, error) {
 	if actor.IsSalesperson() {
 		return []*domain.User{actor}, nil
 	}
@@ -352,6 +361,8 @@ func (s *DashboardService) listScopedSellers(ctx context.Context, actor *domain.
 			return nil, domain.ErrForbidden
 		}
 		filters.BranchID = actor.BranchID
+	} else if actor.IsDirector() && branchID != nil {
+		filters.BranchID = branchID
 	}
 
 	return s.sellerRepo.List(ctx, filters)

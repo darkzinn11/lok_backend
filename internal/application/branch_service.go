@@ -37,10 +37,6 @@ func (s *BranchService) List(ctx context.Context) ([]BranchOutput, error) {
 
 	output := make([]BranchOutput, 0, len(branches))
 	for _, branch := range branches {
-		if branch.ID != operationalBranchID {
-			continue
-		}
-
 		if branch.Status != domain.BranchStatusActive {
 			continue
 		}
